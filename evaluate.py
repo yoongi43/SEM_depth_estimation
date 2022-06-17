@@ -1,5 +1,6 @@
 import torch
-from model import DepthEstimation
+# from model import DepthEstimation
+from model import DepthEstimation2 as DepthEstimation
 # from model import SimpleConv as DepthEstimation
 import os
 from torch.utils.data import DataLoader
@@ -24,7 +25,7 @@ def evaluate(args):
     save_test = opj(args.save_dir, "test", str(args.epoch).zfill(4))
     os.makedirs(save_test, exist_ok=True)
     
-    model = DepthEstimation()
+    model = DepthEstimation(n_conformer=2)
     # print('Current model:')
     # print(model)
     # print('Loading checkpoint from :', ckpt_dir)
