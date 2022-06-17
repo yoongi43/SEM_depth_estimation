@@ -28,7 +28,7 @@ class Swish(nn.Module):
     
 
 class FeedForward(nn.Module):
-    def __init__(self, channels, expansion_factor=2, dropout_p=0.1):
+    def __init__(self, channels, expansion_factor=2, dropout_p=0.0):
         super().__init__()
         self.net = nn.Sequential(
             nn.LayerNorm(normalized_shape=channels),

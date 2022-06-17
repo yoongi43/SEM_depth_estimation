@@ -40,6 +40,7 @@ class Solver:
         self.loss_fn = self.mseloss
         self.optim = optim.AdamW(params=self.model.parameters(), lr=args.lr)
         self.scheduler = optim.lr_scheduler.StepLR(self.optim, step_size=args.lr_step, gamma=args.lr_decay)
+        self.img_size = 45*66
         
         
         
@@ -144,13 +145,20 @@ class Solver:
                 pred = model(img)
                 
                 optim.zero_grad()
-                loss = mseloss(pred, target) / img.size(0)
-                loss = torch.sqrt(loss+torch.finfo(torch.float32).eps)
+                
+                # loss = mseloss(pred, target) / img.size(0)
+                # loss = torch.sqrt(loss+torch.finfo(torch.float32).eps)
                 # loss = self.loss_fn(pred, target)
+                
+                L2 = (pred*255-target*255)**2
+                L2 = L2.sum(axis=(1,2))/self.img_size
+                rmse = torch.sqrt(L2)
+                loss = torch.mean(rmse)
+                
                 loss.backward()
                 optim.step()
                 
-                total_mse_loss += mseloss(pred, target).detach()
+                # total_mse_loss += mseloss(pred, target).detach()
                 
                 # total_loss += loss
                 
@@ -183,8 +191,8 @@ class Solver:
             # total_loss = total_loss / len(train_loader)
             # total_loss = dcu_numpy(total_loss)
             # total_rmse = dcu_numpy(torch.sqrt(total_loss))
-            total_rmse = torch.sqrt(total_mse_loss / num_train)
-            print(f"Epoch end: {epoch}, Loss: {total_rmse}")
+            # total_rmse = torch.sqrt(total_mse_loss / num_train)
+            # print(f"Epoch end: {epoch}, Loss: {total_rmse}")
             
             
             if epoch % args.valid_per == 0:
@@ -202,10 +210,14 @@ class Solver:
                         
                         pred = model(img)
                         
-                        loss = mseloss(pred, target)
+                        # loss = mseloss(pred, target)
+                        L2 = (pred*255-target*255)**2
+                        L2 = L2.sum(axis=(-2, -1))
+                        rmse = torch.sqrt(L2 / self.img_size)
+                        loss = torch.sum(rmse)
                         total_loss += loss
-                    total_loss = total_loss / num_valid
-                    total_loss = torch.sqrt(total_loss)
+                    total_loss = total_loss / len(valid_loader)
+                    # total_loss = torch.sqrt(total_loss)
                     total_loss = dcu_numpy(total_loss)
                         
                     print("Valid loss: ", total_loss)
@@ -252,12 +264,12 @@ if __name__=="__main__":
     parser.add_argument('--base_dir', type=str, default='./logs')
     
     """ Training """
-    parser.add_argument('--batch-size', type=int, default=512)
+    parser.add_argument('--batch-size', type=int, default=256)
     parser.add_argument('--num-workers', type=int, default=32)
     parser.add_argument('--train-report-batch', type=int, default=2)
-    parser.add_argument('--lr', type=float, default=2e-4)
+    parser.add_argument('--lr', type=float, default=1e-3)
     parser.add_argument('--gpu', type=int, default=0)
-    parser.add_argument('--lr-step', type=int, default=100)
+    parser.add_argument('--lr-step', type=int, default=50)
     parser.add_argument('--lr-decay', type=float, default=0.9)
     # parser.add_argument('--loss', type=str, default='rmse')
     
